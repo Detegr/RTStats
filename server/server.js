@@ -2,6 +2,13 @@ Future=Npm.require("fibers/future");
 
 Meteor.startup(function()
 {
+	function sortfunc(a,b)
+	{
+		if(a.nummessages < b.nummessages) return 1;
+		else if(a.nummessages === b.nummessages) return 0;
+		else return -1;
+	}
+
 	var client=new pg.Client("postgres://postgres@localhost/loggerdb");
 	client.connect(function(err)
 	{
@@ -16,7 +23,7 @@ Meteor.startup(function()
 						{
 							ret.rows[i].nummessages=ret2.rows[i].nummessages;
 						}
-						console.log(ret);
+						ret.rows=ret.rows.sort(sortfunc);
 						fut.return(ret);
 					});
 				});
