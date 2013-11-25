@@ -1,0 +1,24 @@
+<head>
+  <title>Stats</title>
+</head>
+
+<body>
+  <div id="outer">
+    {{> stats}}
+  </div>
+</body>
+
+<template name="stats">
+  <div class="stats">
+    {{#each users}}
+      {{> user}}
+    {{/each}}
+  </div>
+</template>
+
+<template name="user">
+  <div class="user {{selected}}">
+    <span class="name">{{name}}</span>
+	<span class="rows">{{nummessages}}</span>
+  </div>
+</template>
