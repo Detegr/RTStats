@@ -4,7 +4,7 @@ if(Meteor.isClient)
 	{
 		Meteor.call("users", function(err, result)
 		{
-			Session.set("users", result.rows);
+			Session.set("users", result);
 		});
 		return Session.get("users");
 	};

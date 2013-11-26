@@ -13,41 +13,51 @@ Meteor.startup(function()
 	client.connect(function(err)
 	{
 		Meteor.methods({
+			randommessages: function(rows) {
+				var futures=_.map(rows, function(row)
+				{
+					var future=new Future();
+					client.query("select message from messages where id=(select messageid from usermessages where userid=" +
+						row.userid + " AND messagenum=(select floor(random()*" + row.nummessages + ")))",
+					function(err, ret)
+					{
+						if(err) {
+							future.resolver(err);
+							return;
+						}
+						if(ret.rows[0])
+						{
+							future.resolver()(err, ret.rows[0].message);
+						}
+						else future.resolver()(err, "Undefined");
+					});
+					return future;
+				});
+				Future.wait(futures);
+				return futures;
+			},
 			users: function() {
-				var fut=new Future();
-				var futures=[];
+				console.log("Users called");
+				var userfut=new Future();
 				client.query("select * from users ORDER BY id", function(err,ret)
 				{
-					client.query("select nummessages from usermessageamounts ORDER BY userid", function(err, ret2)
-					{
-						for(var i=0, len=ret.rows.length; i<len; ++i)
-						{
-							futures[i]=new Future();
-							ret.rows[i].nummessages=ret2.rows[i].nummessages;
-							(function(i)
-							{
-								client.query("select message from messages where id=(select messageid from usermessages where userid=" +
-									ret.rows[i].id + " AND messagenum=(select floor(random()*" + ret.rows[i].nummessages + ")))",
-								function(err, ret3)
-								{
-									if(ret3.rows[0])
-									{
-										futures[i].resolver()(ret3.rows[0].message);
-									} else futures[i].resolver()("Undefined");
-								});
-							})(i);
-						}
-						ret.rows=ret.rows.sort(sortfunc);
-						fut.return(ret);
-					});
+					userfut.return(ret);
 				});
-				var res=fut.wait();
-				var result2=Future.wait(futures);
-				for(var i=0, len=futures.length; i<len; ++i)
+				var users=userfut.wait().rows;
+				var amountfut=new Future();
+				client.query("select * from usermessageamounts ORDER BY userid", function(err, ret)
 				{
-					res.rows[i].randommessage=futures[i].error;
+					amountfut.return(ret);
+				});
+				var amounts=amountfut.wait().rows;
+				var msgfut=new Future();
+				var msgs=Meteor.call("randommessages", amounts);
+				for(var i=0, len=users.length; i<len; ++i)
+				{
+					users[i].nummessages=amounts[i].nummessages;
+					users[i].randommessage=msgs[i].get();
 				}
-				return res;
+				return users;
 			}
 		});
 	});
