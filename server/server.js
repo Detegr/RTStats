@@ -1,5 +1,12 @@
 Future=Npm.require("fibers/future");
 
+var messagecache=null;
+Meteor.setInterval(function()
+{
+	console.log("Clearing message cache");
+	messagecache=null;
+}, 10000);
+
 Meteor.startup(function()
 {
 	function sortfunc(a,b)
@@ -51,12 +58,18 @@ Meteor.startup(function()
 				});
 				var amounts=amountfut.wait().rows;
 				var msgfut=new Future();
-				var msgs=Meteor.call("randommessages", amounts);
+				var msgs;
+				if(!messagecache)
+				{
+					msgs=Meteor.call("randommessages", amounts);
+					messagecache=msgs;
+				} else msgs=messagecache;
 				for(var i=0, len=users.length; i<len; ++i)
 				{
 					users[i].nummessages=amounts[i].nummessages;
 					users[i].randommessage=msgs[i].get();
 				}
+				users=users.sort(sortfunc);
 				return users;
 			}
 		});
