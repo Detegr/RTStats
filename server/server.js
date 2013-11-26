@@ -7,6 +7,12 @@ Meteor.setInterval(function()
 	messagecache=null;
 }, 10000);
 
+function pad(num)
+{
+	if(num<10) return "0"+num;
+	else return num;
+}
+
 Meteor.startup(function()
 {
 	function sortfunc(a,b)
@@ -43,7 +49,8 @@ Meteor.startup(function()
 				Future.wait(futures);
 				return futures;
 			},
-			users: function() {
+			users: function()
+			{
 				console.log("Users called");
 				var userfut=new Future();
 				client.query("select * from users ORDER BY id", function(err,ret)
@@ -71,6 +78,24 @@ Meteor.startup(function()
 				}
 				users=users.sort(sortfunc);
 				return users;
+			},
+			searchLog: function(str)
+			{
+				if(str.length < 5)
+				{
+					return [{msg: "Pistähän vähän pituutta siihen hakuun Arto."}];
+				}
+				var fut=new Future();
+				client.query("select users.name,message,time from messages INNER JOIN users ON users.id=messages.userid WHERE message ILIKE '%" + str + "%';", function(err, ret)
+				{
+					fut.return(ret);
+				});
+				var ret=fut.wait().rows;
+				return _.map(fut.wait().rows, function(row)
+				{
+					var t=row.time;
+					return {msg: t.getDate() + "." + (t.getMonth()+1) + "." + t.getFullYear() + " " + pad(t.getHours()) + ":" + pad(t.getMinutes()) + " <" + row.name + "> " + row.message};
+				});
 			}
 		});
 	});
