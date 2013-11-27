@@ -96,6 +96,28 @@ Meteor.startup(function()
 					var t=row.time;
 					return {msg: t.getDate() + "." + (t.getMonth()+1) + "." + t.getFullYear() + " " + pad(t.getHours()) + ":" + pad(t.getMinutes()) + " <" + row.name + "> " + row.message};
 				});
+			},
+			getThisYearCounts: function()
+			{
+				var y=new Date().getFullYear();
+				var futures=_.map([1,2,3,4,5,6,7,8,9,10,11,12], function(month)
+				{
+					var future=new Future();
+					client.query("select count(*) from messages WHERE EXTRACT(month from time) =" + month + " AND EXTRACT(year from time) = " + y + ";", function(err, ret)
+					{
+						future.return(ret.rows[0]);
+					});
+					return future;
+				});
+				Future.wait(futures);
+				var values=[];
+				for(var i=0, len=futures.length; i<len; ++i)
+				{
+					var val=parseInt(futures[i].get().count, 10);
+					if(val>0) values.push(val);
+				}
+				console.log(values);
+				return values;
 			}
 		});
 	});
