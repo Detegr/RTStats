@@ -40,5 +40,17 @@
 </template>
 
 <template name="result">
+	<a href="context/{{msgid}}"><div>{{msg}}</div></a>
+</template>
+
+<template name="ctxresult">
 	<div>{{msg}}</div>
+</template>
+
+<template name="context">
+	<div id="results">
+		{{#each results}}
+			{{> ctxresult}}
+		{{/each}}
+	</div>
 </template>

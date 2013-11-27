@@ -5,6 +5,10 @@ if(Meteor.isClient)
 		"/search": function() {
 			Session.set("searchStr", this.querystring.split("=")[1]); // TODO: Stupid
 			return "search";
+		},
+		"/context/:msgid": function() {
+			Session.set("ctxStr", this.params.msgid);
+			return "context";
 		}
 	});
 
@@ -61,5 +65,14 @@ if(Meteor.isClient)
 			Session.set("searchResults", result);
 		});
 		return Session.get("searchResults");
+	};
+
+	Template.context.results=function()
+	{
+		Meteor.call("searchContext", Session.get("ctxStr"), function(err, result)
+		{
+			Session.set("ctxResults", result);
+		});
+		return Session.get("ctxResults");
 	};
 }

@@ -83,10 +83,10 @@ Meteor.startup(function()
 			{
 				if(str.length < 5)
 				{
-					return [{msg: "Pistähän vähän pituutta siihen hakuun Arto."}];
+					return [{msgid: "", msg: "Pistähän vähän pituutta siihen hakuun Arto."}];
 				}
 				var fut=new Future();
-				client.query("select users.name,message,time from messages INNER JOIN users ON users.id=messages.userid WHERE message ILIKE '%" + str + "%';", function(err, ret)
+				client.query("select messages.id,users.name,message,time from messages INNER JOIN users ON users.id=messages.userid WHERE message ILIKE '%" + str + "%';", function(err, ret)
 				{
 					fut.return(ret);
 				});
@@ -94,7 +94,22 @@ Meteor.startup(function()
 				return _.map(fut.wait().rows, function(row)
 				{
 					var t=row.time;
-					return {msg: t.getDate() + "." + (t.getMonth()+1) + "." + t.getFullYear() + " " + pad(t.getHours()) + ":" + pad(t.getMinutes()) + " <" + row.name + "> " + row.message};
+					return {msgid: row.id, msg: t.getDate() + "." + (t.getMonth()+1) + "." + t.getFullYear() + " " + pad(t.getHours()) + ":" + pad(t.getMinutes()) + " <" + row.name + "> " + row.message};
+				});
+			},
+			searchContext: function(msgid)
+			{
+				var fut=new Future();
+				var msgid=parseInt(msgid, 10);
+				client.query("select users.name,message,time from messages INNER JOIN users ON users.id=messages.userid WHERE messages.id >= " + Math.max(0, msgid-5) + " AND messages.id <= " + (msgid+5) + ";", function(err, ret)
+				{
+					fut.return(ret);
+				});
+				var ret=fut.wait().rows;
+				return _.map(fut.wait().rows, function(row)
+				{
+					var t=row.time;
+					return {msgid: row.id, msg: t.getDate() + "." + (t.getMonth()+1) + "." + t.getFullYear() + " " + pad(t.getHours()) + ":" + pad(t.getMinutes()) + " <" + row.name + "> " + row.message};
 				});
 			},
 			getThisYearCounts: function()
